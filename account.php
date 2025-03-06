@@ -2,74 +2,74 @@
 <?php include('layouts/header.php'); ?>
 
 <?php
-  include('server/connection.php');
+session_start();
+include('server/connection.php');
 
-  if( !isset($_SESSION['logged_in'])){
+if (!isset($_SESSION['logged_in'])) {
     header('location: login.php'); 
     exit;
-  }
+}
 
+// Logout logic
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header('location: login.php');
+    exit;
+}
 
-  if(isset($_GET['logout'])){
-    if(isset($_SESSION['logged_in'])){
-      unset($_SESSION['logged_in']);
-      unset($_SESSION['user_email']);
-      unset($_SESSION['user_name']);
-      header('location: login.php');
-      exit;
-    }
-  }
-
-
-
-  if(isset($_POST['change_password'])){
-
+// Change Password
+if (isset($_POST['change_password'])) {
     $password = $_POST['password'];
     $confirmPassword = $_POST['confirmPassword'];
     $user_email = $_SESSION['user_email'];
 
-    //if pasword dont match
-    if($password !== $confirmPassword){
-      header('location: account.php?error=passwords dont match');    
+    // Password validation
+    if ($password !== $confirmPassword) {
+        header('location: account.php?error=Passwords do not match');    
+        exit;
+    } elseif (strlen($password) < 6) {
+        header('location: account.php?error=Password must be at least 6 characters');
+        exit;
+    } else {
+        // Secure password hashing
+        $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
+        try {
+            $stmt = $conn->prepare("UPDATE users SET user_password = :password WHERE user_email = :email");
+            $stmt->bindParam(':password', $hashed_password, PDO::PARAM_STR);
+            $stmt->bindParam(':email', $user_email, PDO::PARAM_STR);
 
-    //if password is less than 6 char
-    }else if(strlen($password) < 6){
-      header('location: account.php?error=password must be at least 6 characters');
-    
-      //no error
-    }else{
-
-      $stmt = $conn->prepare("UPDATE users SET user_password=? WHERE user_email=?");
-      $stmt->bind_param('ss',md5($password),$user_email);
-
-      if($stmt->execute()){
-        header('location: account.php?message=password has been updated successfully');
-      }else{
-        header('location: account.php?error=could not update password');
-      }
-
-
+            if ($stmt->execute()) {
+                header('location: account.php?message=Password has been updated successfully');
+                exit;
+            } else {
+                header('location: account.php?error=Could not update password');
+                exit;
+            }
+        } catch (PDOException $e) {
+            header('location: account.php?error=Something went wrong');
+            exit;
+        }
     }
+}
 
-  }
-
-
-  //get orders
-  if(isset($_SESSION['logged_in'])){
-
+// Get orders
+if (isset($_SESSION['logged_in'])) {
     $user_id = $_SESSION['user_id'];
-    $stmt = $conn->prepare("SELECT * FROM orders WHERE user_id=? ");
 
-    $stmt->bind_param('i',$user_id);
-
-    $stmt->execute(); 
-
-    $orders = $stmt->get_result(); //[array]
-  
-  
-  }
+    try {
+        $stmt = $conn->prepare("SELECT * FROM orders WHERE user_id = :user_id");
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+        $stmt->execute();
+        $orders = $stmt->fetchAll(PDO::FETCH_ASSOC); // Fetch as an associative array
+    } catch (PDOException $e) {
+        header('location: account.php?error=Could not retrieve orders');
+        exit;
+    }
+}
 ?>
+
+
 
 
 
@@ -151,7 +151,7 @@
           <th>Order date</th>
           <th>Order detail</th>
         </tr>
-        <?php while($row = $orders->fetch_assoc() ){ ?>
+        <?php foreach ($orders as $row) { ?>
         
             <tr>
               <td>
@@ -161,22 +161,22 @@
                     <p class="mt-3"><?php echo $row['order_id']; ?></p>
                   </div>
                 </div> -->
-                <span><?php echo $row['order_id']; ?></span>
+                <span><?php echo htmlspecialchars($row['order_id']); ?></span>
               </td>
 
               <td>
-                <span><?php echo $row['order_cost']; ?></span>
+                <span><?php echo htmlspecialchars($row['order_cost']); ?></span>
               </td>
               <td>
-                <span><?php echo $row['order_status']; ?></span>
+                <span><?php echo htmlspecialchars($row['order_status']); ?></span>
               </td>
               <td>
-                <span><?php echo $row['order_date']; ?></span>
+                <span><?php echo htmlspecialchars($row['order_date']); ?></span>
               </td>
               <td>
                 <form method="POST" action="order_details.php">
-                  <input type="hidden" value="<?php echo $row['order_status']; ?>" name="order_status" />
-                  <input type="hidden" value="<?php echo $row['order_id']; ?>" name="order_id" />
+                  <input type="hidden" value="<?php echo htmlspecialchars($row['order_status']); ?>" name="order_status" />
+                  <input type="hidden" value="<?php echo htmlspecialchars($row['order_id']); ?>" name="order_id" />
                   <input type="submit" name="order-details-btn" class="btn order-details-btn" value="details" />
                 </form>
               </td>

@@ -11,45 +11,52 @@
 ?>
 
 <?php 
-  
-  //1. determine page no
-  if(isset($_GET['page_no']) && $_GET['page_no'] != ""){
-    //if user has already entered page then page number is the one that they selected 
-    $page_no = $_GET['page_no'];
-  }else{
-    //if user just entered the page then default page is 1  
-    $page_no = 1;
+
+  // 1. Determine the page number
+  if (isset($_GET['page_no']) && $_GET['page_no'] != "") {
+      $page_no = $_GET['page_no'];
+  } else {
+      $page_no = 1;
   }
 
-  //2.return number of products
-  $stmt1 = $conn->prepare("SELECT COUNT(*) AS total_records FROM orders");
+  // 2. Return the number of orders (total records)
+  try {
+      $stmt1 = $conn->prepare("SELECT COUNT(*) AS total_records FROM orders");
+      $stmt1->execute();
+      $stmt1->bindColumn(1, $total_records);
+      $stmt1->fetch();
+  } catch (PDOException $e) {
+      echo "Error: " . $e->getMessage();
+      exit;
+  }
 
-  $stmt1->execute(); 
-  $stmt1->bind_result($total_records);
-  $stmt1->store_result();
-  $stmt1->fetch();
-
-  //3. products per page
+  // 3. Products per page
   $total_records_per_page = 5;
-  
-  $offset = ($page_no-1) * $total_records_per_page;
+
+  $offset = ($page_no - 1) * $total_records_per_page;
 
   $previous_page = $page_no - 1;
   $next_page = $page_no + 1;
 
-  $adjacents = "2";
+  $adjacents = 2;
 
-  $total_no_of_pages = ceil($total_records/$total_records_per_page);
+  $total_no_of_pages = ceil($total_records / $total_records_per_page);
 
+  // 4. Get all orders (products) for the current page
+  try {
+      $stmt2 = $conn->prepare("SELECT * FROM orders LIMIT :offset, :limit");
+      $stmt2->bindParam(':offset', $offset, PDO::PARAM_INT);
+      $stmt2->bindParam(':limit', $total_records_per_page, PDO::PARAM_INT);
+      $stmt2->execute();
 
-  //4. get all products
-  
-  $stmt2 = $conn->prepare("SELECT * FROM orders LIMIT $offset,$total_records_per_page");
-  $stmt2->execute();
-  $orders = $stmt2->get_result();
-
+      $orders = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+  } catch (PDOException $e) {
+      echo "Error: " . $e->getMessage();
+      exit;
+  }
 
 ?>
+
 
 
 <div class="container-fluid">

@@ -2,36 +2,52 @@
 
 <?php
 
-  if(isset($_GET['order_id'])){
+  if (isset($_GET['order_id'])) {
 
-    $order_id = $_GET['order_id'];
+      $order_id = $_GET['order_id'];
 
-    $stmt = $conn->prepare("SELECT * FROM orders WHERE order_id=? ");
-    $stmt->bind_param('i',$order_id);
-    $stmt->execute();
+      try {
+          // Prepare statement
+          $stmt = $conn->prepare("SELECT * FROM orders WHERE order_id = :order_id");
+          $stmt->bindParam(':order_id', $order_id, PDO::PARAM_INT);
+          $stmt->execute();
 
-    $order = $stmt->get_result(); //[]
+          $order = $stmt->fetchAll(PDO::FETCH_ASSOC); // Fetch the result as an array
 
-  }else if(isset($_POST['edit_order'])){
+      } catch (PDOException $e) {
+          echo "Error: " . $e->getMessage();
+          exit;
+      }
 
-    $order_status = $_POST['order_status'];
-    $order_id = $_POST['order_id'];
+  } else if (isset($_POST['edit_order'])) {
 
-    $stmt = $conn->prepare("UPDATE orders SET order_status=? WHERE order_id=?");
-    $stmt->bind_param('si',$order_status, $order_id);
+      $order_status = $_POST['order_status'];
+      $order_id = $_POST['order_id'];
 
-    if($stmt->execute()){
-      header('location: index.php?order_updated=Product has been updated successfully');
-    }else{
-      header('location: products.php?order_failed=Error occured, try again');
-    }
+      try {
+          // Prepare statement to update the order status
+          $stmt = $conn->prepare("UPDATE orders SET order_status = :order_status WHERE order_id = :order_id");
+          $stmt->bindParam(':order_status', $order_status, PDO::PARAM_STR);
+          $stmt->bindParam(':order_id', $order_id, PDO::PARAM_INT);
 
+          // Execute and check for success
+          if ($stmt->execute()) {
+              header('location: index.php?order_updated=Product has been updated successfully');
+          } else {
+              header('location: products.php?order_failed=Error occurred, try again');
+          }
 
-  }else{
-    header('location: index.php');
-    exit;
+      } catch (PDOException $e) {
+          echo "Error: " . $e->getMessage();
+          exit;
+      }
+
+  } else {
+      header('location: index.php');
+      exit;
   }
 ?>
+
 <div class="container-fluid">
   <div class="row" style="min-height: 1000px;">
     <?php include('sidemenu.php'); ?>

@@ -1,52 +1,45 @@
 <?php include('layouts/header.php'); ?>
 
 <?php
-  include('server/connection.php');
+session_start();
+include('server/connection.php'); // Ensure this uses PDO
 
-  if(isset($_SESSION['logged_in'])){
+if (isset($_SESSION['logged_in'])) {
     header('Location: account.php');
     exit;
-  } 
-  
-  if(isset($_POST['login_btn'])){
+}
 
+if (isset($_POST['login_btn'])) {
     $email = $_POST['email'];
-    $password = md5($_POST['password']);
+    $password = $_POST['password']; // Plain password input from user
 
-    $stmt = $conn->prepare("SELECT user_id,user_name, user_email, user_password FROM users WHERE user_email = ? AND user_password = ? LIMIT 1");
+    try {
+        // Fetch user by email
+        $stmt = $conn->prepare("SELECT user_id, user_name, user_email, user_password FROM users WHERE user_email = ? LIMIT 1");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    $stmt->bind_param("ss", $email,$password);
+        if ($user && password_verify($password, $user['user_password'])) {
+            // Set session variables
+            $_SESSION['user_id'] = $user['user_id'];
+            $_SESSION['user_name'] = $user['user_name'];
+            $_SESSION['user_email'] = $user['user_email'];
+            $_SESSION['logged_in'] = true;
 
-    if($stmt->execute()){
-
-      $stmt->bind_result($user_id,$user_name,$user_email,$user_password);
-      $stmt->store_result();
-
-      if($stmt->num_rows() == 1){
-        $stmt->fetch();
-        
-        $_SESSION['user_id'] = $user_id;
-        $_SESSION['user_name'] = $user_name;
-        $_SESSION['user_email'] = $user_email;
-        $_SESSION['logged_in'] = true;
-
-          
-        header('location: account.php?login_success=logged in successfully');
-
-
-      }else{
-        header('location: login.php?error=could not verify your account');
-      }
-
-    }else{
-      //error
-      header('location: login.php?error=something went wrong');
+            header('location: account.php?login_success=Logged in successfully');
+            exit;
+        } else {
+            header('location: login.php?error=Invalid email or password');
+            exit;
+        }
+    } catch (PDOException $e) {
+        header('location: login.php?error=Something went wrong');
+        exit;
     }
-
-  }
-
-
+}
 ?>
+
+
 
 
 

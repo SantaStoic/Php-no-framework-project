@@ -89,7 +89,7 @@
 
         <?php include('server/get_ft_products.php'); ?>
 
-        <?php while($row= $ft_products->fetch_assoc()){ ?>
+        <?php foreach($ft_products as $row){ ?>
 
           <div class="product text-center col-md-4 col-sm-12">
             <img class="img-fluid mb-3" src="assets/imgs/<?php echo $row['product_image']; ?> " alt="" />
@@ -100,8 +100,8 @@
               <i class="fa fa-star" aria-hidden="true"></i>
               <i class="fa fa-star-half-o" aria-hidden="true"></i>
             </div>
-            <h5 class="p-name"><?php echo $row['product_name']; ?></h5>
-            <h4 class="p-price">$<?php echo $row['product_price']; ?></h4>
+            <h5 class="p-name"><?php echo htmlspecialchars($row['product_name']); ?></h5>
+            <h4 class="p-price">$<?php echo  htmlspecialchars($row['product_price']); ?></h4>
             <a href="<?php echo "single-product.php?product_id=". $row['product_id']; ?>">
               <button class="buy-btn">Buy Now</button>
             </a>
@@ -136,29 +136,34 @@
 
         <?php include('server/get_ct.php'); ?>
 
-        <?php while($row= $ct_products->fetch_assoc()){ ?>
+        <?php 
+        if (empty($ct_products)) {
+          echo "No products found.";
+        }else {
+          foreach($ct_products as $row){ ?>
           
-          <div class="product text-center col-md-4 col-sm-12">
-            <img class="img-fluid mb-3" src="assets/imgs/<?php echo $row['product_image']; ?>" alt="" />
-            <div class="star">
-              <i class="fa fa-star" aria-hidden="true"></i>
-              <i class="fa fa-star" aria-hidden="true"></i>
-              <i class="fa fa-star" aria-hidden="true"></i>
-              <i class="fa fa-star" aria-hidden="true"></i>
-              <i class="fa fa-star-half-o" aria-hidden="true"></i>
+            <div class="product text-center col-md-4 col-sm-12">
+              <img class="img-fluid mb-3" src="assets/imgs/<?php echo $row['product_image']; ?>" alt="" />
+              <div class="star">
+                <i class="fa fa-star" aria-hidden="true"></i>
+                <i class="fa fa-star" aria-hidden="true"></i>
+                <i class="fa fa-star" aria-hidden="true"></i>
+                <i class="fa fa-star" aria-hidden="true"></i>
+                <i class="fa fa-star-half-o" aria-hidden="true"></i>
+              </div>
+              <h5 class="p-name"><?php echo htmlspecialchars($row['product_name']); ?></h5>
+              <h4 class="p-price">$<?php echo htmlspecialchars($row['product_price']); ?></h4>
+              <a href="<?php echo "single-product.php?product_id=". $row['product_id']; ?>">
+                <button class="buy-btn">Buy Now</button>
+              </a>
             </div>
-            <h5 class="p-name"><?php echo $row['product_name']; ?></h5>
-            <h4 class="p-price">$<?php echo $row['product_price']; ?></h4>
-            <a href="<?php echo "single-product.php?product_id=". $row['product_id']; ?>">
-              <button class="buy-btn">Buy Now</button>
-            </a>
-          </div>
           
-        <?php } ?>
-
+          <?php } 
+        }
+        ?>
         </div>
       </div>
-    </section>
+    </section>  
 
     <!--Clothes1-->
     <section id="featured" class="my-5">
@@ -170,7 +175,7 @@
 
         <?php include('server/get_pt.php'); ?>
 
-        <?php while($row= $pt_products->fetch_assoc()){ ?>
+        <?php foreach($pt_products as $row){ ?>
           
           <div class="product text-center col-md-4 col-sm-12">
             <img class="img-fluid mb-3" src="assets/imgs/<?php echo $row['product_image']; ?>" alt="" />
@@ -181,8 +186,8 @@
               <i class="fa fa-star" aria-hidden="true"></i>
               <i class="fa fa-star-half-o" aria-hidden="true"></i>
             </div>
-            <h5 class="p-name"><?php echo $row['product_name']; ?></h5>
-            <h4 class="p-price">$<?php echo $row['product_price']; ?></h4>
+            <h5 class="p-name"><?php echo htmlspecialchars($row['product_name']); ?></h5>
+            <h4 class="p-price">$<?php echo htmlspecialchars($row['product_price']); ?></h4>
             <a href="<?php echo "single-product.php?product_id=". $row['product_id']; ?>">
               <button class="buy-btn">Buy Now</button>
             </a>
@@ -194,6 +199,7 @@
       </div>
     </section>
 
+<?php include "layouts/footer.php" ?>
     <!--Shoes-->
     <!-- <section id="featured" class="my-5">
       <div class="container text-center mt-5 py-5">
@@ -229,4 +235,3 @@
     </section> -->
 
           
-<?php include('layouts/footer.php'); ?>

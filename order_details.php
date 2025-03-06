@@ -2,52 +2,42 @@
 
 <?php
 
-  /*
-    not paid
-    shipped 
-    delivered
-  */
-
   include('server/connection.php');
 
-  if(isset($_POST['order-details-btn']) && isset($_POST['order_id'])){
+  // If the order details button was clicked
+  if (isset($_POST['order-details-btn']) && isset($_POST['order_id'])) {
+      $order_id = $_POST['order_id'];
+      $order_status = $_POST['order_status'];
 
-  $order_id = $_POST['order_id'];
-    $order_status = $_POST['order_status'];
+      // Securely fetch order items
+      $stmt = $conn->prepare("SELECT * FROM order_items WHERE order_id = ?");
+      $stmt->execute([$order_id]);
 
-    $stmt = $conn->prepare("SELECT * FROM order_items WHERE order_id = ? ");
+      $order_details = $stmt->fetchAll(PDO::FETCH_ASSOC); // Fetch all rows as associative array
 
-    $stmt->bind_param('i',$order_id);
+      if (!$order_details) {
+          header('Location: account.php?error=Order not found');
+          exit;
+      }
 
-    $stmt->execute();
-
-    $order_details = $stmt->get_result();
-
-    $order_total_price = calculateTotalOrderPrice($order_details);
-  }else{
-    header('location: account.php');
-    exit;
+      // Calculate total order price
+      $order_total_price = calculateTotalOrderPrice($order_details);
+  } else {
+      header('Location: account.php');
+      exit;
   }
 
-
-
-  function calculateTotalOrderPrice($order_details){
-
-    $total = 0;
-
-    foreach($order_details as $row){
-      $product_price = $row['product_price'];
-      $product_quantity = $row['product_quantity'];
-      
-      $total = $total + ($product_price * $product_quantity);
-    }
-
-    return $total;
+  // Function to calculate total order price
+  function calculateTotalOrderPrice($order_details) {
+      $total = 0;
+      foreach ($order_details as $row) {
+          $total += $row['product_price'] * $row['product_quantity'];
+      }
+      return $total;
   }
-
-
 
 ?>
+
 
 
 

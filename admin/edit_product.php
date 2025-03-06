@@ -2,42 +2,67 @@
 
 <?php 
 
-  if(isset($_GET['product_id'])){
+  if (isset($_GET['product_id'])) {
 
-    $product_id = $_GET['product_id'];
+      $product_id = $_GET['product_id'];
 
-    $stmt = $conn->prepare("SELECT * FROM products WHERE product_id=? ");
-    $stmt->bind_param('i',$product_id);
-    $stmt->execute();
+      try {
+          // Prepare statement
+          $stmt = $conn->prepare("SELECT * FROM products WHERE product_id = :product_id");
+          $stmt->bindParam(':product_id', $product_id, PDO::PARAM_INT);
+          $stmt->execute();
 
-    $products = $stmt->get_result(); //[]
+          $products = $stmt->fetchAll(PDO::FETCH_ASSOC); // Fetch the result as an array
 
-  }else if(isset($_POST['edit_btn'])){
-    
-    $product_id = $_POST['product_id'];
-    $title = $_POST['title'];
-    $description = $_POST['description'];
-    $price = $_POST['price'];
-    $offer = $_POST['offer'];
-    $color = $_POST['color'];
-    $category = $_POST['category'];
+      } catch (PDOException $e) {
+          echo "Error: " . $e->getMessage();
+          exit;
+      }
 
-    $stmt = $conn->prepare("UPDATE products SET product_name=?, product_description=?, product_price=?,
-                            product_special_offer=?, product_color=?, product_category=? WHERE product_id=?");
-    $stmt->bind_param('ssssssi',$title,$description,$price,$offer,$color,$category,$product_id);
+  } else if (isset($_POST['edit_btn'])) {
 
-    if($stmt->execute()){
-      header('location: products.php?edit_success_message=Product has been updated successfully');
-    }else{
-      header('location: products.php?edit_failure_message=Error occured, try again');
-    }
-   
-  
-  }else{
-    header('Location: products.php');
-    exit;
+      $product_id = $_POST['product_id'];
+      $title = $_POST['title'];
+      $description = $_POST['description'];
+      $price = $_POST['price'];
+      $offer = $_POST['offer'];
+      $color = $_POST['color'];
+      $category = $_POST['category'];
+
+      try {
+          // Prepare statement to update product information
+          $stmt = $conn->prepare("UPDATE products SET product_name = :title, product_description = :description, 
+                                  product_price = :price, product_special_offer = :offer, product_color = :color, 
+                                  product_category = :category WHERE product_id = :product_id");
+
+          // Bind parameters
+          $stmt->bindParam(':title', $title, PDO::PARAM_STR);
+          $stmt->bindParam(':description', $description, PDO::PARAM_STR);
+          $stmt->bindParam(':price', $price, PDO::PARAM_STR);
+          $stmt->bindParam(':offer', $offer, PDO::PARAM_STR);
+          $stmt->bindParam(':color', $color, PDO::PARAM_STR);
+          $stmt->bindParam(':category', $category, PDO::PARAM_STR);
+          $stmt->bindParam(':product_id', $product_id, PDO::PARAM_INT);
+
+          // Execute and check for success
+          if ($stmt->execute()) {
+              header('location: products.php?edit_success_message=Product has been updated successfully');
+          } else {
+              header('location: products.php?edit_failure_message=Error occurred, try again');
+          }
+
+      } catch (PDOException $e) {
+          echo "Error: " . $e->getMessage();
+          exit;
+      }
+
+  } else {
+      header('Location: products.php');
+      exit;
   }
+  
 ?>
+
 
 <div class="container-fluid">
   <div class="row" style="min-height: 1000px;">

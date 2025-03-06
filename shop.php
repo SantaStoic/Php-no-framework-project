@@ -21,13 +21,15 @@ if(isset($_POST['search'])){
   $price = $_POST['price'];
 
   //2.return number of products
-  $stmt1 = $conn->prepare("SELECT COUNT(*) AS total_records FROM products WHERE product_category=? AND product_price<=?");
+  $stmt1 = $conn->prepare("SELECT COUNT(*) AS total_records FROM products WHERE product_category=:category AND product_price<=:price");
 
-  $stmt1->bind_param('si',$category,$price);
+  $stmt1->bindParam(':category', $category, PDO::PARAM_STR);
+  $stmt1->bindParam(':price', $price, PDO::PARAM_INT);
   $stmt1->execute(); 
-  $stmt1->bind_result($total_records);
-  $stmt1->store_result();
-  $stmt1->fetch();
+  // $stmt1->bind_result($total_records);
+  // $stmt1->store_result();
+  // $stmt1->fetch();
+  $total_records = $stmt1->fetchColumn();
 
   //3. products per page
   $total_records_per_page = 9;
@@ -43,12 +45,15 @@ if(isset($_POST['search'])){
 
   //4. get all products
   
-  $stmt2 = $conn->prepare("SELECT * FROM products WHERE product_category=? AND product_price<=? LIMIT $offset,$total_records_per_page");
+  $stmt2 = $conn->prepare("SELECT * FROM products WHERE product_category=:category AND product_price<=:price LIMIT :offset, :limit");
 
-  $stmt2->bind_param('si',$category,$price);
+  $stmt2->bindParam(':category', $category, PDO::PARAM_STR);
+  $stmt2->bindParam(':price', $price, PDO::PARAM_INT);
+  $stmt2->bindParam(':offset', $offset, PDO::PARAM_INT);
+  $stmt2->bindParam(':limit', $total_records_per_page, PDO::PARAM_INT);
   $stmt2->execute();
-  $products = $stmt2->get_result();//[array]
-  
+  // $products = $stmt2->get_result();//[array]
+  $products = $stmt2->fetchAll(PDO::FETCH_ASSOC);
  
   
   //return all products --> if you have small website 1000
@@ -67,9 +72,10 @@ if(isset($_POST['search'])){
   $stmt1 = $conn->prepare("SELECT COUNT(*) AS total_records FROM products");
 
   $stmt1->execute(); 
-  $stmt1->bind_result($total_records);
-  $stmt1->store_result();
-  $stmt1->fetch();
+  // $stmt1->bind_result($total_records);
+  // $stmt1->store_result();
+  // $stmt1->fetch();
+  $total_records = $stmt1->fetchColumn();
 
   //3. products per page
   $total_records_per_page = 9;
@@ -86,9 +92,12 @@ if(isset($_POST['search'])){
 
   //4. get all products
   
-  $stmt2 = $conn->prepare("SELECT * FROM products LIMIT $offset,$total_records_per_page");
+  $stmt2 = $conn->prepare("SELECT * FROM products LIMIT :offset, :limit");
+  $stmt2->bindParam(':offset', $offset, PDO::PARAM_INT);
+  $stmt2->bindParam(':limit', $total_records_per_page, PDO::PARAM_INT);
   $stmt2->execute();
-  $products = $stmt2->get_result();
+  // $products = $stmt2->get_result();
+  $products = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 }
 
 
@@ -186,7 +195,7 @@ if(isset($_POST['search'])){
         <p>Here you can check our products</p>
         <div class="row mx-auto container">
 
-          <?php while($row = $products->fetch_assoc()) { ?>
+          <?php foreach($products as $row) { ?>
             <div
               onclick="window.location.href='single-product.php?product_id=<?php echo $row['product_id']; ?>';"
               class="product text-center col-md-4 col-sm-12"
@@ -207,6 +216,7 @@ if(isset($_POST['search'])){
 
         </div>
 
+        <!-- Pagination  -->
         <nav aria-label="Page navigation example">
           <ul class="pagination mt-5">
 
@@ -235,8 +245,6 @@ if(isset($_POST['search'])){
   </div>
 </section>
 
-
-
-<script src="assets/js/app.js"></script>
+<script src="assets/js/app.js"></scrip>
 
 <?php include('layouts/footer.php'); ?>

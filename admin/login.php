@@ -2,54 +2,56 @@
 <?php include('header.php'); ?>
 <?php
 
-
-
   include('../server/connection.php');
 
-  if(isset($_SESSION['admin_logged_in'])){
-    header('Location: index.php');
-    exit;
+  // If the admin is already logged in, redirect to the index page
+  if (isset($_SESSION['admin_logged_in'])) {
+      header('Location: index.php');
+      exit;
   } 
-  
-  if(isset($_POST['login_btn'])){
 
-    $email = $_POST['email'];
-    $password = md5($_POST['password']);
+  if (isset($_POST['login_btn'])) {
 
-    $stmt = $conn->prepare("SELECT admin_id,admin_name, admin_email, admin_password FROM admins WHERE admin_email = ? AND admin_password = ? LIMIT 1");
+      $email = $_POST['email'];
+      $password = md5($_POST['password']); // Hash the password
 
-    $stmt->bind_param("ss", $email,$password);
+      try {
+          // Prepare the query
+          $stmt = $conn->prepare("SELECT admin_id, admin_name, admin_email, admin_password FROM admins WHERE admin_email = :email AND admin_password = :password LIMIT 1");
 
-    if($stmt->execute()){
+          // Bind parameters
+          $stmt->bindParam(':email', $email, PDO::PARAM_STR);
+          $stmt->bindParam(':password', $password, PDO::PARAM_STR);
 
-      $stmt->bind_result($admin_id,$admin_name,$admin_email,$admin_password);
-      $stmt->store_result();
+          // Execute the query
+          $stmt->execute();
 
-      if($stmt->num_rows() == 1){
-        $stmt->fetch();
-        
-        $_SESSION['admin_id'] = $admin_id;
-        $_SESSION['admin_name'] = $admin_name;
-        $_SESSION['admin_email'] = $admin_email;
-        $_SESSION['admin_logged_in'] = true;
+          // Check if a row is found
+          if ($stmt->rowCount() == 1) {
+              $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
-          
-        header('location: index.php?login_success=logged in successfully');
+              // Store session variables
+              $_SESSION['admin_id'] = $admin['admin_id'];
+              $_SESSION['admin_name'] = $admin['admin_name'];
+              $_SESSION['admin_email'] = $admin['admin_email'];
+              $_SESSION['admin_logged_in'] = true;
 
-
-      }else{
-        header('location: login.php?error=could not verify your account');
+              // Redirect with a success message
+              header('location: index.php?login_success=logged in successfully');
+          } else {
+              header('location: login.php?error=could not verify your account');
+          }
+      } catch (PDOException $e) {
+          // Handle any error
+          header('location: login.php?error=error occurred while logging in');
+          exit;
       }
-
-    }else{
-      //error
-      header('location: login.php?error=something went wrong');
-    }
-
   }
 
-
 ?>
+
+
+
 
 
 
